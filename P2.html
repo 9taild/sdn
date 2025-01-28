@@ -1,0 +1,139 @@
+Step 1 : Design topology
+
+Step 2 : configure system
+C#R1
+config
+interface fastEthernet 0/0
+ip address 192.168.1.50 255.255.255.0
+no shutdown
+exit
+interface serial 0/0
+ip address 10.1.1.1 255.255.255.0
+no shutdown
+exit
+C#PC1
+ip 192.168.1.1/24 192.168.1.50
+show ip
+(optional) R1#ping 192.168.1.1
+C#R2
+config t
+interface FastEthernet 0/0
+ip address 192.168.2.50 255.255.255.0
+no shutdown
+exit
+interface serial 0/0
+ip address 10.1.1.2 255.255.255.0
+no shutdown
+exit
+interface serial 0/1
+ip address 11.1.1.1 255.255.255.0
+no shutdown
+exit
+exit
+wr
+C#PC2
+ip 192.168.2.1/24 192.168.2.50
+show ip
+(optional) R2#ping 192.168.2.1
+C#R3
+config t
+interface fastEthernet 0/0
+ip address 192.168.3.50 255.255.255.0
+no shutdown
+exit
+interface serial 0/0
+ip address 11.1.1.2 255.255.255.0
+no shutdown
+exit
+exit
+wr
+C#PC3
+ip 192.168.3.1/24 192.168.3.50
+show ip
+(optional)R3#ping 192.168.3.1
+
+Step 3 : Configure and test ACL 
+C#R1
+config t
+router rip
+version 2
+network 192.168.1.0
+network 10.0.0.0
+exit
+exit
+wr
+C#R2
+config t
+router rip
+version 2
+network 192.168.2.0
+network 11.0.0.0
+exit
+exit
+wr
+C#R3
+config t
+router rip
+version 2
+network 192.168.3.0
+network 11.0.0.0
+(test) ping 192.168.1.1
+
+Step 4 : Apply Standard ACL
+
+# Here the scenario we are going to use is that whatever data that is being sent by PC 1
+should not be received by PC 3, so based on the features of a standard ACL, we know
+that it needs to be placed near the destination.
+# So by checking the network topology we can say that the best place to create a
+standard ACL is in Router 3. We should also note that the number of the standard
+ACL should be in the range of 1-99, in our case we have chosen 10.
+
+C#R3
+config t
+access-list 10 deny host 192.168.1.1
+exit
+show access-list
+config t
+access-list 10 permit any
+interface serial 0/0
+ip acces-group 10 in
+exit
+exit
+wr
+
+###
+PC1 tries to send to PC3, its access is denied
+PC1>ping 192.168.3.1
+But when PC2 tries to send data to PC3, its allowed
+PC2>ping 192.168.3.1
+
+###- To remove any acl configuration = In config mode no access-list <access-list-number> ###
+
+Step 5 : External ACL
+
+# Here the scenario we are going to use is that PC 2 should not be able to send data to
+PC 3. To achieve this we are going to use External ACL.
+# The concept of external ACL states that we need to place it close to its source. So in
+terms of the network topology and the position of PC 2, the closest place that is near
+the source would be Router 2 .
+# We should also note that the number of the external ACL should be in the range of
+100-199, in our case we have chosen 141.
+
+C#R2
+config t
+access-list 141 deny icmp host 192.168.2.1 host 192.168.3.1
+access-list 141 permit icmp any any
+do show access-list
+interface serial 0/1
+ip access-group 141 out
+exit
+exit
+
+###Here below, we can observe that when PC 2 tries to send data to PC 3, its access is
+denied.
+PC2>ping 192.168.3.1
+###Similarly when PC 3 tries to send data to PC 2, nothing gets through since all
+communication has been blocked between them.
+PC3>ping 192.168.2.1
+###But when PC 1 tries to send data to PC 2, its access is not denied.
+PC1>ping 192.168.2.1
