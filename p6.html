@@ -1,5 +1,7 @@
 ### Single-Area OSPFv2
 Step 1 : Topology
+curl https://yuzuaihara.neocities.org/sdn/p61.jpeg --output image.jpeg
+
 Step 2 : configure pc
 C#PC1:
 ip 192.168.1.1 255.255.255.0 gateway 192.168.1.50
@@ -106,6 +108,10 @@ PC2:ping 192.168.1.1
 
 ### Multi-Area OSPFv2
 Step 1:make topology (4 routers)
+curl https://yuzuaihara.neocities.org/sdn/p63.jpeg --output image.jpeg
+curl https://yuzuaihara.neocities.org/sdn/p62.jpeg --output image.jpeg
+
+
 Step 2: configure all netowrk as below
 C#R1:
 conf t
@@ -260,6 +266,8 @@ ping R3 via R2 : ping 172,17.2.1
 Multiarea OSPFv3
 
 Step 1 : build topology
+curl https://yuzuaihara.neocities.org/sdn/p64.jpeg --output image.jpeg
+
 Step 2 : Configure IP’s address and Loopback in all the router according to the topology.
 C#R1:
 conf t
