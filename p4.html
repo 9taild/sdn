@@ -1,0 +1,83 @@
+***********Implement Inter-VLAN Routing***********
+
+
+
+Pc ip
+Pc1: 192.168.5.5/24 192.168.5.1
+Pc2: 192.168.10.10/24 192.168.10.1
+Pc3: 192.168.5.10/24 192.168.5.1
+
+1. Switch IOU1 Configuration
+L2 switch 1:
+conf
+vlan 5
+name it
+vlan 10
+name sales
+exit
+end 
+wr
+Assign VLANs to Ports on IOU1:
+(e0/1) - VLAN 5:
+interface e0/1
+switchport mode access
+switchport access vlan 5
+no shutdown
+ (e0/2) - VLAN 10:
+interface e0/2
+switchport mode access
+switchport access vlan 10
+no shutdown
+
+Trunk to Router (e0/0):
+interface e0/0
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shutdown
+o	Trunk to IOU2 (e0/3):
+
+
+interface e0/3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shutdown
+________________________________________
+2. L2 switch 2
+vlan 5
+name it
+vlan 10
+name sales
+(e0/1) - VLAN 5:
+interface e0/1
+switchport mode access
+switchport access vlan 5
+no shutdown
+(e0/0):
+
+
+interface e0/0
+switchport mode trunk
+no shutdown
+________________________________________
+2.	Router R1 Configuration
+interface f0/0
+no shutdown
+
+interface f0/0.5
+encapsulation dot1Q 5
+ip address 192.168.5.1 255.255.255.0
+
+interface f0/0.10
+encapsulation dot1Q 10
+ip address 192.168.10.1 255.255.255.0
+________________________________________
+Testing Connectivity
+On switches:
+Sh ruuning
+show vlan brief
+show interface trunk
+Test Ping:
+o	From PC1, ping PC2:
+ping 192.168.10.10
+o	From PC3, ping PC2:
+ping 192.168.10.10

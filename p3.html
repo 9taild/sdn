@@ -1,0 +1,222 @@
+**********Implement a GRE Tunnel************
+
+use 3 roters 
+between r1 and r3 tunnel 
+1.	Use 3 routers:
+o	R1: Source of the GRE Tunnel.
+o	R2: ISP (just acts as a middle router).
+o	R3: Destination of the GRE Tunnel.
+2.	Use the following subnets:
+o	R1 to R2 (f0/0 on R1, f0/0 on R2): 1.1.1.0/24
+o	R2 to R3 (f0/1 on R2, f0/1 on R3): 2.2.2.0/24
+o	Tunnel Network (R1 to R3): 192.168.13.0/24
+o	R1 Loopback: 10.1.1.1/32
+o	R3 Loopback: 30.1.1.1/32
+________________________________________
+
+
+
+Step 1: Router Configurations
+R1 Configuration
+! Assign IP to f0/0 (connected to R2)
+interface FastEthernet0/0
+ ip address 1.1.1.1 255.255.255.0
+ no shutdown
+
+! Configure Loopback interface
+interface Loopback0
+ ip address 10.1.1.1 255.255.255.255
+
+! Configure GRE Tunnel
+interface Tunnel0
+ ip address 192.168.13.1 255.255.255.0
+ tunnel source 1.1.1.1
+ tunnel destination 2.2.2.2
+ mtu 1300
+R2 Configuration (ISP)
+! Assign IP to f0/0 (connected to R1)
+interface FastEthernet0/0
+ ip address 1.1.1.2 255.255.255.0
+ no shutdown
+
+! Assign IP to f0/1 (connected to R3)
+interface FastEthernet0/1
+ ip address 2.2.2.1 255.255.255.0
+ no shutdown
+
+
+
+R3 Configuration
+! Assign IP to f0/1 (connected to R2)
+interface FastEthernet0/1
+ ip address 2.2.2.2 255.255.255.0
+ no shutdown
+
+! Configure Loopback interface
+interface Loopback0
+ ip address 30.1.1.1 255.255.255.255
+
+! Configure GRE Tunnel
+interface Tunnel0
+ ip address 192.168.13.2 255.255.255.0
+ tunnel source 2.2.2.2
+ tunnel destination 1.1.1.1
+ mtu 1300
+________________________________________
+Step 2: Routing
+We’ll use a basic Static Route configuration for simplicity.
+R1 Static Route
+ip route 30.1.1.1 255.255.255.255 192.168.13.2
+R2 Static Routes
+ip route 10.1.1.1 255.255.255.255 1.1.1.1
+ip route 30.1.1.1 255.255.255.255 2.2.2.2
+R3 Static Route
+ip route 10.1.1.1 255.255.255.255 192.168.13.1
+________________________________________
+Step 3: Verification
+1. Check Tunnel Interface Status
+On R1 and R3, ensure the tunnel interface is up:
+show ip interface brief
+2. Ping Test
+•	From R1, ping R3’s Loopback (30.1.1.1):
+ping 30.1.1.1
+•	From R3, ping R1’s Loopback (10.1.1.1):
+ping 10.1.1.1
+3. View Tunnel Configuration
+show run interface Tunnel0
+show ip route
+show ip interface brief
+
+
+
+********* implement vtp *************
+
+3 L2 switches
+bobcat, tiger, panther
+bobcat connected to tiger and tiger connected to pather
+
+bobcat L2 switch:
+vlan 10
+vlan 20
+vlan 30
+exit
+end
+show vlan
+interface e1/0
+switchport trunk encapsulation dot1q
+exit
+
+
+tiger L2 switch:
+conf t
+hostname tiger 
+interface e1/0
+switchport trunk encapsulation dot1q
+exit
+interface e1/1
+switchport trunk encapsulation dot1q
+exit
+
+pather L2 switch:
+conf t
+hostname pather 
+interface e1/1
+switchport trunk encapsulation dot1q
+exit
+______________________________
+mode set:
+bobcat :
+int e1/0
+vtp mode server
+
+tiger:
+int e1/1
+vtp mode trans
+
+pather:
+int e1/1
+vtp mode client
+________________________________
+Domain set
+bobcat, tiger, pather:
+vtp domain MCSCS
+_______________________
+password set:
+bobcat, tiger, pather:
+vtp password MCSCS123
+______________________
+check vlans
+bobcat, tiger, pather:
+show vlan
+_________________
+pather:
+show vlan status
+pruning = disable to enable
+___________________
+bobcat:
+vtp pruning
+
+
+
+******************implement NAT*****************
+select c7200
+network adaptor = PA-4T+
+2 pc connected to in (normal)switch and 
+switch connected to r1 and 
+r1 connected to r2 using serial connection 
+
+r1:
+conf t
+hostname gateway
+interface s1/0
+ip address 200.2.2.18 255.255.255.252
+no shut
+exit
+
+interface f0/0
+ip address 10.10.10.1 255.255.255.0
+no shut
+end
+
+r2:
+conf t
+hostname ISP
+
+interface serial 1/0
+ip address 200.2.2.17 255.255.255.252
+no shut 
+end
+
+interface loopback 0
+ip address 172.16.1.1 255.255.255.255
+no shut
+exit
+
+pc1:
+ip 10.10.10.2/24 10.10.10.1
+show ip
+
+pc2:
+ip 10.10.10.3/24 10.10.10.1
+
+r2:
+ip route 199.99.9.32 255.255.255.224 200.2.2.18
+
+r1:
+ip route 0.0.0.0 0.0.0.0 200.2.2.17
+ip nat pool public-access 199.99.9.32 netmask 255.255.255.252
+access-list 1 permit 10.10.10.0 0.0.0.255
+
+ip nat inside source list 1 pool public-access overload
+interface f0/0
+ip nat inside
+exit
+interface s1/0
+ip nat outside
+end
+
+
+check and verify:
+ip nat translations
+ip nat statistics 
+ping 172.16.1.1
