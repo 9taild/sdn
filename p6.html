@@ -1,0 +1,420 @@
+### Single-Area OSPFv2
+Step 1 : Topology
+Step 2 : configure pc
+C#PC1:
+ip 192.168.1.1 255.255.255.0 gateway 192.168.1.50
+sh ip
+C#PC2:
+ip 192.168.2.1 255.255.255.0 gateway 192.168.2.50
+sh ip
+C#PC3:
+ip 192.168.3.1 255.255.255.0 gateway 192.168.3.50
+sh ip
+
+Step 3 : configure router
+C#R1:
+conf t
+int f0/0
+ip add 192.168.1.50 255.255.255.0
+no shut
+ex
+int s0/0
+ip add 10.1.1.1 255.255.255.0
+no shut
+ex
+do wr
+
+C#R2:
+conf t
+int f0/0
+ip add 192.168.2.50 255.255.255.0
+no shut
+ex
+int s0/1
+ip add 10.1.1.2 255.255.255.0
+no shut
+ex
+int s1/1
+ip add 11.1.1.1 255.255.255.0
+no shut
+ex
+do wr
+
+C#R3:
+conf t
+int f0/0
+ip add 192.168.3.50 255.255.255.0
+no shut
+ex
+int s1/0
+ip add 11.1.1.2 255.255.255.0
+no shut
+ex
+do wr
+
+Step 4 : check if IP assigned correctly using "do sh ip int br"
+R1 : do sh ip int br
+R2 : same
+R3 : same
+
+Step 5 : check ping working in all routers and pc
+PC1 : ping 192.168.1.50
+PC2 : ping 192.168.2.50
+PC3 : Ping 192.168.3.50
+R1 : do ping 10.1.1.2
+R2 : do ping 10.1.1.1
+R3 : do ping 11.1.1.1
+
+Step 6 : Configure OSPF in all routers 
+C#R1:
+config t
+router ospf 1
+network 192.168.1.0 0.0.0.255 area 0
+network 10.1.1.0 0.0.0.255 area 0
+ex
+do wr
+
+C#R2:
+router ospf 1
+network 192.168.2.0 0.0.0.255 area 0
+network 10.1.1.0 0.0.0.255 area 0
+netwrok 11.1.1.0 0.0.0.255 area 0
+ex
+do wr
+
+C#R3:
+router ospf 1
+network 192.168.3.0 0.0.0.255 area 0
+network 11.1.1.0 0.0.0.255 area 0
+ex
+do wr
+
+Step 7 : Enter command ‘sh ip route’ in all router to check whether OSPF is done
+properly. (r1,r2,r3)
+
+STep 8 : Enter command ‘sh ip protocols’ to check which all protocols are applied in our
+network. (r1,r2,r3)
+
+Step 9 : Enter command ‘sh ip ospf neigbor’ to check OSPF Neighbor (r1,r2,r3)
+
+Step 10 : Now you can ping any indirect connection because we have done OSPF on the
+router. 
+PC1:ping 192.168.2.1
+PC2:ping 192.168.1.1 
+...
+======================================================
+
+### Multi-Area OSPFv2
+Step 1:make topology (4 routers)
+Step 2: configure all netowrk as below
+C#R1:
+conf t
+int f0/0
+ip add 192.168.12.1 255.255.255.0
+no shut
+exit
+int f0/1
+ip add 192.168.13.1 255.255.255.0
+no shut
+exit
+do wr
+
+C#R2:
+conf t
+int f0/0
+ip add 192.168.12.2 255.255.255.0
+no shut
+exit
+int f0/1
+ip add 192.168.24.2 255.255.255.0
+no shut
+exit
+do wr
+
+C#R3:
+conf t
+int f0/1
+ip add 192.168.13.3 255.255.255.0
+no shut
+exit
+int loopback0
+ip add 3.3.3.3 255.255.255.255
+no shut
+exit
+do wr
+
+C#R4:
+conf t
+int f0/1
+ip add 192.168.24.4 255.255.255.0
+no shut
+exit
+int loopback0
+ip add 4.4.4.4 255.255.255.255
+no shut
+exit
+do wr
+
+Step 3 : Configure system for Multi-Area OSPFv2
+C#R1:
+conf t
+router ospf1
+network 192.168.12.0 0.0.0.255 area 0
+network 192.168.13.0 0.0.0.255 area 1
+exit
+do wr
+end
+
+C#R2:
+router ospf1
+network 192.168.12.0 0.0.0.255 area 0
+network 192.168.24.0 0.0.0.255 area 2
+exit
+do wr
+end
+
+C#R3:
+router ospf1
+network 192.168.13.0 0.0.0.255 area 1
+network 3.3.3.3 0.0.0.0 area 1
+exit
+do wr
+
+C#R4:
+router ospf 1
+network 192.168.24.0 0.0.0.255 area 2
+network 4.4.4.4 0.0.0.0 area 2
+exit
+do wr
+end
+
+Step 4:
+Enter the command ‘show ip route ospf’ to check whether OSPF is successfully configured. (all routers)
+
+Step 5 :
+To check the neighbor enter ‘show ip ospf neighbor’ and check the neighbor. (all routers)
+
+Step 6 : Try pinging any router or loopback from any router.
+
+======================================================
+
+OSPFv2 Route Summarization and Filtering 
+
+Step 1 & 2 same as Multi-Area OSPF
+add more loopbacks to R3
+C#R3:
+conf t
+int loopback0
+ip add 172.17.0.1 255.255.255.255
+no shut
+exit
+int loopback1
+ip add 172.17.1.1 255.255.255.255
+no shut
+exit
+int loopback2
+ip add 172.17.02.1 255.255.255.255
+no shut 
+exit
+int loopback3
+ip add 172.17.3.1 255.255.255.255
+no shut
+exit
+int loopback4
+ip add 172.17.04.1 255.255.255.255
+no shut 
+exit
+router ospf 1
+network 172.17.0.1 0.0.0.255 area 1
+network 172.17.1.1 0.0.0.255 area 1
+network 172.17.2.1 0.0.0.255 area 1
+network 172.17.3.1 0.0.0.255 area 1
+end
+
+Step 3 : Enter ‘show ip route’ on R2 and you will see all the Loopback of R3.
+Because till now we haven’t performed any summarization on R1.
+
+Step 4: So now we will perform Summarization on R1
+C#R1:
+conf t
+router ospf 1
+area 1 range 172.17.0.0 255.255.252.0
+end
+show ip route
+
+Step 5 :
+Once again we will go to R2 and enter the command ‘show ip route’.
+Now we have done summarization on R1 so we will see only 2 loopbacks of R3.
+(output)
+thats how we do summarization.
+
+Step 6: Now you can ping any loopback of R3 from any router.
+- Just to confirm I have pinged the loopback of R3 via R4.
+ping R3 via R4 : ping 172.17.3.1
+(output)
+ping R3 via R2 : ping 172,17.2.1
+(output)
+
+======================================================
+
+Multiarea OSPFv3
+
+Step 1 : build topology
+Step 2 : Configure IP’s address and Loopback in all the router according to the topology.
+C#R1:
+conf t
+int s0/0
+no shut
+ipv6 address 2001:D88:ACAD:12::1/64
+no shut
+int L0
+no shut
+ipv6 address 2001:D88:ACAD::1/64
+no shut
+int L1
+no shut
+ipv6 address 2001:D88:ACAD:1::1/64
+no shut
+int L2
+no shut
+ipv6 address 2001:D88:ACAD:2::1/64
+no shut
+int L3
+no shut
+ipv6 address 2001:D88:ACAD:3::1/64
+no shut
+do wr
+exit
+
+C#R2:
+conf t
+int s0/0
+no shut
+ipv6 address 2001:D88:ACAD:12::2/64
+no shut
+int s0/1
+no shut
+ipv6 address 2001:D88:ACAD:23::2/64
+no shut
+int L8
+no shut
+ipv6 address 2001:D88:ACAD:8::1/64
+no shut
+do wr
+exit
+
+C#R3:
+conf t
+int s0/1
+no shut
+ipv6 address 2001:D88:ACAD:23::3/64
+no shut
+int L4
+no shut
+ipv6 address 2001:D88:ACAD:4::1/64
+no shut
+int L5
+no shut
+ipv6 address 2001:D88:ACAD:5::1/64
+no shut
+int L6
+no shut
+ipv6 address 2001:D88:ACAD:6::1/64
+no shut
+int L7
+no shut
+ipv6 address 2001:D88:ACAD:7::1/64
+no shut
+do wr
+
+Step 3: Once IP is assigned to all. We have to do IPv6 unicast and we have to assign
+router ID to the routers.
+C#R1:
+conf t
+ipv6 unicast
+ipv6 unicast-routing
+do wr
+ipv6 router ospf 1
+router-id 1.1.1.1
+do sh ipv6 ospf
+
+C#R2:
+conf t
+ipv6 unicast
+ipv6 unicast-routing
+do wr
+ipv6 router ospf 1
+router-id 2.2.2.2
+do sh ipv6 ospf
+
+C#R3:
+conf t
+ipv6 unicast
+ipv6 unicast-routing
+do wr
+ipv6 router ospf 1
+router-id 3.3.3.3
+do sh ipv6 ospf
+
+Step 4 : Now we will configure multi-area OSPFv3 in all the router.
+C#R1:
+conf t
+int L0
+ipv6 ospf 1 area 1
+ipv6 ospf network point-to-point
+int L1
+ipv6 ospf 1 area 1
+ipv6 ospf network point-to-point
+int L2
+ipv6 ospf 1 area 1
+ipv6 ospf network point-to-point
+int L3
+ipv6 ospf 1 area 1
+ipv6 ospf network point-to-point
+int s0/0
+ipv6 ospf 1 area 0
+do wr
+exit
+
+C#R2:
+int s0/0
+ipv6 ospf 1 area 0
+int s0/1
+ipv6 ospf 1 area 0
+int l8
+ipv6 ospf 1 area 0
+ipv5 ospf network point-to-point
+do wr
+
+C#R3:
+int l4
+ipv6 ospf 1 area 2
+ipv5 ospf network point-to-point
+int l5
+ipv6 ospf 1 area 2
+ipv5 ospf network point-to-point
+int l6
+ipv6 ospf 1 area 2
+ipv5 ospf network point-to-point
+int l7
+ipv6 ospf 1 area 2
+ipv5 ospf network point-to-point
+int s0/1
+ipv6 ospf 1 area 0
+do wr
+
+Step 5: Use the show ipv6 protocols command to verify multi-area OSPFv3 Status.
+R1 : do sh ipv6 protocols
+R2 : do sh ipv6 protocols
+R3 : ...
+Step 6: Use the ‘show ipv6 ospf’ command to verify configurations.
+R1 : show ipv6 ospf
+R2, R3 same
+Step 7: Verify OSPFv3 neighbors and routing information.
+R1 : sh ipv6 ospf neighbor
+R2 : sh ipv6 ospf neighbor
+Step 8: Check ‘show ipv6 route ospf ’ to see the OSPF configuration
+(all routers)
+Step 9: Issue the ‘show ipv6 ospf database’ command on all routers to check the IPv6
+OSPF Database.
+(all routers)
