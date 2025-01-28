@@ -1,0 +1,644 @@
+AIM: Observe STP Topology Changes and Implement RSTP
+1. Implement Advanced STP Modifications and Mechanisms
+2. Implement MST
+
+#################################################
+1)Implement Advanced STP Modifications and Mechanisms
+
+theory: What is STP?
+• Spanning Tree Protocol (STP) is used to make a loop free network by
+monitoring the network to track all the links and shut down the least
+redundant ones.
+• Root bridge is a switch in a single VLAN or whole topology (according
+to the type of STP standard used) which is responsible for distributing
+BPDUs and block the least redundant port.
+
+##############################
+
+Step 1: topology design
+
+Step 2:Configure the devices:
+
+#D1
+
+enable
+conf t
+hostname D1
+spanning-tree mode pvst
+banner motd #D1, STP Topology Changes and RSTP Lab#
+line con 0
+exec-timeout 0 0
+logging synchronous
+exit
+interface range Et 0/0, Et 0/1, Et 0/2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shutdown
+exit
+vlan 2
+name SecondVLAN
+exit
+interface vlan 1
+ip address 10.0.0.1 255.0.0.0
+no shutdown
+exit
+
+
+##########
+
+#D2:
+
+enable
+conf t
+hostname D2
+banner motd #D2, STP Topology Changes and RSTP Lab#
+spanning-tree mode pvst
+line con 0
+exec-timeout 0 0
+logging synchronous
+exit
+interface range Et 0/0, Et 0/1, Et 0/2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shutdown
+exit
+vlan 2
+name SecondVLAN
+exit
+interface vlan 1
+ip address 10.0.0.2 255.0.0.0
+no shutdown
+exit
+exit
+exit
+
+########
+
+#A1:
+enable
+configure terminal
+hostname A1
+banner motd #A1, STP Topology Changes and RSTP Lab#
+spanning-tree mode pvst
+line con 0
+exec-timeout 0 0
+logging synchronous
+exit
+interface range Et 0/0, Et 0/1, Et 0/2
+switchport
+switchport mode trunk
+no shutdown
+trunk encapsulation dot1q
+exit
+vlan 2
+name SecondVLAN
+exit
+interface vlan 1
+ip address 10.0.0.3 255.0.0.0
+no shutdown
+exit
+
+#####################
+Step 3: Discover the Default Spanning Tree.
+1. Find the root bridge.
+• The root bridge is elected based upon which switch has the highest
+Bridge ID (BID).
+• The BID is made up of a configurable priority value (which defaults to
+32768) and the base MAC address for the switch.
+• Use the command show spanning-tree root to gather that information
+from your switches to support the root bridge decision.
+Enter the command ‘show spanning-tree root’ and observe what the output
+tells you about the root bridge.
+
+
+#finding root bridge
+
+#D1:
+show spanning-tree root 
+
+#D2: 
+show spanning-tree root 
+
+#A1:
+show spanning-tree root 
+
+#################
+The root cost is the cost to go to root bridge and in D1 and A1 there is a cost of
+4.
+But in D2 there is no cost because D2 is our root bridge.
+We will see it clearly in upcoming Screenshot
+2. Find the Root Port for each switch
+• As we saw in the previous output of show spanning-tree root on each
+switch, the Path Cost can be different amongst switches.
+• In this case, the path cost from A1 to D2 is 4, reflecting connectivity
+via a Gigabit Ethernet port
+• While the path cost from D1 to D2 is 4, reflecting connectivity via a
+Gigabit Ethernet port.
+• While the path cost from D2 to D2 is 0 because it is root bridge.
+
+#########################
+# find the root port 
+
+#D1:
+show spanning-tree root 
+
+#D2:
+show spanning-tree root 
+
+#A1:
+show spanning-tree root 
+
+#################
+#Changes in network:
+
+##A1: Issue ‘show spanning-tree’ in A1 and check the output
+
+#A1:
+
+show spanning-tree
+
+########################################
+Our topology does not really illustrate the difference between port cost and path
+cost very well, so we will introduce a change in the network to achieve this. At
+D1, shutdown the g1/0/1 interface.
+The result of this is that D2 will have to change the port it considers root, and
+we will then see the difference between port cost and path cost.
+
+#D1:
+
+conf t
+interface gi0/2
+shutdown eth 0/2
+
+##############################################################
+
+#Now enter ‘show spanning-tree’ at root i.e. D2:
+
+#D2:
+show spanning-tree
+
+#####################################################
+
+#4. Identify Designated Ports.
+If you have not already done so, issue the no shutdown command for D1
+interface g1/0/1.
+This will restore our full topology and allow for the non-root attached
+segment to exist (the links between A1 and D2).
+
+#######
+
+#D1:
+interface rth 0/2
+no shut
+exit
+
+#####################################
+
+#On D2, issue the show spanning-tree command, and you will see that there
+are two ports now identified as being in the Designated Port role.
+
+#D2:
+show spaning-tree
+
+##########################################
+
+#And now look at the segments from the A1 side. Issue the show spanningtree command on A1.
+
+#A1:
+show spanning-tree
+
+#################################
+
+#You may have noticed in the previous output that the two links from A1 to
+D1 were not being used.
+
+#####################################################
+
+# Step 4: Implement and Observe Rapid Spanning Tree Protocol.
+• We will implement Rapid Spanning Tree Protocol (RSTP) on all the
+switches. Using the same basic rules, RSTP speeds up convergence
+significantly.
+• On D2, issue the debug spanning-tree events command, and then issue
+the shutdown command for interface g1/0/1 and observe the output.
+
+#D2:
+
+debug spanning-tree events
+conf t
+interface eth 0/2
+shutdown
+
+##########################################
+#On D1, change the spanning tree mode to rapid-pvst:
+
+#D1: spanning-tree mode rapit-pvst
+
+
+######################################
+
+#On D1, issue the command show spanning-tree.
+
+#D1:
+show spanning-tree
+
+######################################################
+
+The type values tell the story. Rapid spanning tree is backwards compatible
+with common spanning tree.
+We will not see the benefits of rapid spanning tree if only one switch is running
+it.
+On D2 and A1, change the spanning tree mode to rapid spanning tree.
+For D2:(Note that I have only enabled the debugging mode for D2, this is why
+the output for D2 is different from D1 and A1 when the spanning-tree mode is
+set to rstp.)
+
+###########
+# For A1:
+
+#A1:
+
+conf t
+
+show spanning-tree
+
+#################################################################################
+
+MST:
+
+###################################################################################
+
+
+What is MST?
+• Multiple Spanning Tree Protocol (MSTP), initially defined in IEEE
+802.1s and later included in IEEE 802.1Q, supports mapping of multiple
+VLANs onto a single spanning-tree instance.
+• This reduces the number of spanning-tree instances required in a switched
+network with many VLANs.
+• Although RSTP provides faster convergence time than STP does, it still
+does not solve a problem inherent in STP: all VLANs within a LAN must
+share the same spanning tree.
+
+########################
+#Step 1 : Topology
+
+# Step 2: configure the switches:
+
+#Switch D1:
+
+enable
+configure terminal 
+hostname D1
+spanning-tree mode rapid-pvst
+line con 0
+exec-timeout 0 0
+logging synchronous
+exit
+int range gi0/0-2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shut
+exit
+vlan 2
+name SecondVLAN
+exit
+vlan 3
+name ThirdVLAN
+exit
+vlan 4
+name FourthVLAN
+exit
+vlan 5
+name FifthVLAN
+exit
+end
+wr
+
+#######################
+
+# Switch D2:
+
+enable 
+configure terminal 
+hostname D2
+spanning-tree mode rapid-pvst
+line con 0
+exec-timeout 0 0
+logging synchronous
+exit
+int range gi0/0-2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shut
+exit
+vlan 2
+name SecondVLAN
+exit
+vlan 3
+name ThirdVLAN
+exit
+vlan 4
+name FourthVLAN
+exit
+vlan 5
+name FifthVLAN
+exit
+end 
+
+#####################
+
+# Switch A1:
+
+enable 
+configure terminal 
+hostname A1
+spanning-tree mode rapid-pvst 
+line con 0
+exec-timeout 0 0
+logging synchronous
+exit
+int range gi0/0-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+no shut
+exit
+int gi1/0
+no shut
+exit
+vlan 2
+name SecondVLAN
+exit
+vlan 3
+name ThirdVLAN
+exit
+vlan 4
+name FourthVLAN
+exit
+vlan 5
+name FifthVLAN
+exit
+end 
+wr
+
+#################################
+# Step 3: Implement and Observe MST.
+Configure MST on D1 and D2.
+On D1 and D2, issue the command spanning-tree mode mst.
+
+
+###########
+
+#D1:
+conf t
+spanning-tree mode mst
+
+########
+
+#D2:
+conf t
+spanning-tree mode mst
+end
+
+############################
+At this point, with no MST-specific configuration, MST Instance 0 is
+operational for all VLANs.
+• Issue the command show spanning-tree and you will see in the output
+that the spanning tree information is about MST 0.
+• Issue the command show spanning-tree mst and you will see the MSTspecific STP information that is specific to MST 0 only.
+Take note of the information displayed for interfaces g1/0/5 and g1/0/6
+because they are connected to a switch that is not running MST.
+
+#####################
+#D1:
+show spanning-tree
+show spanning-tree mst
+
+###############################################
+• The basic behaviour of MST is the same as spanning tree, where a root
+bridge must be selected, then root ports, and finally best paths to the root
+bridge from all non-root bridges.
+• In the current network, we can see that D1 has been elected the root
+bridge. The bridge priority defaults to 32768, so the election is based on
+D1 having a lower base MAC address.
+• The switch elected as root may be different but the rules for election
+remain the same.
+• Issue the command show spanning-tree root on switch A1. Switch A1 is
+running five instances of spanning tree.
+###############################################
+
+#A1:
+
+show spanning-tree root
+
+####################################
+
+Issue the show spanning-tree root command on D2 and the output will be
+different.
+This is because with MST, only one instance of the spanning-tree algorithm
+runs, regardless of the number of VLANs mapped to it.
+
+#################################
+
+#D2:
+show spanning-tree root
+
+##################
+# Configure A1 to use MST.
+#####
+#A1:
+conf t
+spanning-tree mode mst
+#############################################
+Step 4: Configure, Tune and Verify Basic MST Operation.
+In the last part, you configured all three switches to run MST. In this part, you
+will further configure, tune, and verify MST to support the unique topological
+requirements.
+Create and verify an MST configuration.
+Enter MST configuration mode using the command spanning-tree mst
+configuration.
+###########################################
+D1:
+conft
+spanning-tree mst configuration
+
+#####################
+Configure an MST region name. Our example will be CCNPv8.
+######
+#D1:
+name CCNPv8
+########################
+#Configure an MST configuration revision number. Our example will be 1.
+#D1:
+revision 1
+###########################################
+Configure instance 1 to include VLAN 2.
+Configure instance 2 to include VLAN 4.
+Commit the configuration by typing exit and returning to global configuration
+mode
+###########################################
+#D1:
+instance 1 vlan 2
+instance 2 vlan 4
+ex
+end
+############################################################
+#Issue the command show spanning-tree mst to verify the configuration is in
+place
+#####################
+#D1:
+show spanning-tree mst
+############################
+This configuration does not propagate to other switches. Each switch exchanges
+digest information summarizing the VLAN-to-Instance mappings it has
+configured. If a switch receives a BPDU with a different digest, it assumes that
+the sender is in a different MST region. The output below is what A1 shows in
+the topology used to create this lab
+####################################################
+
+#A1:
+show spanning-tree mst
+##############################################
+#Enter digest command in D1:
+
+#########
+#D1:
+show spanning-tree mst configuration digest
+
+#############################################
+#Configure MST on D1, change the revision number to 2 and add VLAN 3 to
+instance 1 and VLAN 5 to instance 2.
+###########
+#D1:
+conf t
+spanning-tree mst configuration
+show current
+##
+revision 2
+instance 1 vlan 3
+instance 2 vlan 5
+show pending
+##
+ex
+end
+#############################################################
+Now configure D2 and A1 with the same configuration settings (name
+CCNPv8, revision2, instance 1 vlans 2-3, instance 2 vlans 4-5).
+After completing the configuration on D2 and A1, the output of show spanningtree mst on A1 should be similar to the following output.
+###############################################################
+#D2:
+conf t
+spanning-tree mst configuration
+spanning-tree mst configuration
+name CCNPv8
+revision 2
+instance 1 vlan 2 
+instance 2 vlan 4
+instance 1 vlan 3
+instance 2 vlan 5
+ex
+end
+######################
+#A1:
+enable 
+configure terminal 
+spanning-tree mst configuration
+name CCNPv8
+revision 2
+instance 1 vlan 2
+instance 2 vlan 4
+instance 1 vlan 3
+instance 2 vlan 5
+exit
+exit
+end 
+wr 
+##
+show spanning-tree mst
+
+###############################################################
+Controlling the Root Bridge.
+• Just like with PVST+ and Rapid PVST+, the current root bridge was
+elected based on the lowest Bridge ID (consisting of the Priority,
+extended system ID equal to the VLAN ID, and base MAC address
+values).
+• With PVST+ or Rapid PVST+, root bridge selection is done for each
+VLAN. With MST, the root bridge is based on instances.
+• There are two basic ways to manipulate the configuration to control the
+location of the root bridge:
+▪ The spanning-tree mst instance-id priority value command can be used
+to manually set a priority value.
+▪ The spanning-tree mst instance-id root { primary | secondary }
+command can be used to automatically set a priority value.
+• You will need to make configuration changes on both D1 and D2. The
+commands used at D1:
+###################################################################
+#D1:
+conf t
+spanning-tree mst  root primary
+spanning-tree mst 1 root primary
+spanning-tree mst 2 root secondary
+#################################################################
+After you have configured both D1 and D2, go to A1 and issue the command
+show spanning-tree root.
+In this output, you will see the root bridges differentiated.
+###############################################################
+#A1:
+show spanning-tree root
+show spanning-tree mst 1
+show spanning-tree blockedports
+##################################################################
+On A1, shutdown interfaces F0/1 and F0/2, assign a new port cost of 1000 to
+F0/2 using the spanning- tree mst 1 cost value command, and then issue the no
+shutdown command on the ports.
+#################################################################
+#A1:
+conf t
+int range gi0/0-1
+shut
+exit
+int gi0/1
+spanning-tree mst 1 cost 100
+ex
+int range gi0/0-1
+no shut
+exit
+end
+###############################################################
+Now verify that this impacts root port selection on A1 using the show spanningtree vlan 1 and show spanning-tree blockedports commands.
+#################################################################
+#A1:
+show spanning-tree mst 1
+show spanning-tree blockedports
+
+#############################################################
+The port priority can be any value between 0 and 240, in increments of 16
+(older switches may allow setting the priority in different increments).
+On A1, issue the command show spanning-tree mst 2 and take note of the port
+ID values listed.
+##############################################################
+#A1:
+show spanning-tree mst 2
+######################################################
+Modify the port priority of D2 interface G1/0/6 so that it becomes the preferred
+port by issuing the spanning-tree mst 2 port-priority value interface
+configuration command. Use a value of 64.
+#########################################################
+#D2:
+conf t
+int range gi0/0-1
+shut
+ex
+int gi0/1
+int gi0/1
+spanning-tree mst 2 port-priority 64
+ex
+int range gi0/0-1
+no shut
+ex
+
+########################################################
+On A1, issue the show spanning-tree mst 2 command and you will see that
+Fa0/4 is now the selected root port.
+##########################################################
+#A1:
+show spanning-tree mst 2
+
