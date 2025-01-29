@@ -1,0 +1,125 @@
+#Inter-VLAN Routing
+#Step 4: Build and Configure the network. 
+#Configuration: 
+#Configure PC 1: 
+ip 192.168.5.5/24 192.168.5.1
+sh ip
+
+#Configure PC 2: 
+ip 192.168.10.10/24 192.168.10.1
+sh ip
+
+#This is where we configure Layer2Switch-1
+
+enable
+configure terminal
+vlan 10
+name SALES
+exit
+end
+wr
+
+#This is where we configure Layer2Switch-2
+configure terminal
+vlan 10
+name IT
+exit
+end
+wr
+
+#We must now configure the trunk and access interface for L2 Switch-1.
+
+configure terminal
+interface Ethernet0/1
+switchport mode access
+switchport access vlan 5
+exit
+interface Ethernet0/2
+switchport mode access
+switchport access vlan 10
+exit
+interface Ethernet0/3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+exit
+interface Ethernet0/0
+switchport trunk encapsulation dot1q
+switchport mode trunk
+exit
+exit
+wr
+
+#We must now configure the trunk and access interface for L2 Switch-2
+configure terminal
+interface Ethernet 0/1
+switchport mode access
+switchport access vlan 5
+exit
+interface Ethernet 0/0
+switchport trunk encapsulation dot1q
+switchport mode trunk
+exit
+end
+wr
+
+#Now we will configure Router 1 (R1).
+#R1:
+configure terminal
+interface FastEthernet 0/0.5
+encapsulation dot1q 5
+ip address 192.168.5.1 255.255.255.0
+no shutdown
+exit
+interface FastEthernet 0/0.10
+encapsulation dot1q 10
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+exit
+end
+wr
+
+#Step 5: Test the network. 
+#pc1:
+ping 192.168.5.1
+ping 192.168.10.1
+ping 192.168.10.10
+ping 192.168.5.10
+
+# We now can ping from PC2 to PCs on VLAN5.
+#pc2:
+ping 192.168.10.1
+ping 192.168.5.5
+ping 192.168.5.10
+
+#We'll now check if PC1 has been correctly configured.
+#pc1:
+sh ip
+
+#pc2:
+sh ip
+
+#Now we check the brief of VLAN on Layer2Switch-1
+sh vlan bri
+
+#Now we check the brief of VLAN on Layer2Switch-2.
+sh vlan bri
+
+#Now we check the running configuration of the Layer 2 Switch – 1.
+#L2-S1
+sh running-config
+
+#Now we check the running configuration of the Layer 2 Switch – 2.
+#L2-S2
+sh running-config
+
+#Now we see the interfaces that have been set to the trunk mode in Layer2Switch-1
+#L2-S1
+sh int trunk
+
+#Now we see the interfaces that have been set to the trunk mode in Layer2Switch – 2.
+#L2-S2
+sh int trunk
+
+#Now we see the overall running configuration of Router 1 (R1).
+#R1
+sh running-config
