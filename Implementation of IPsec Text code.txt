@@ -1,0 +1,507 @@
+Practical  -  Implementation of IPsec Site - to - Site VPNs
+
+
+STEP 2 ------------------
+
+
+R1 --------------------------------
+
+conf t
+no ip domain lookup
+line con 0
+logging sync
+exec-time 0 0
+exit
+---------------This is R1. Implement GRE over IPSec Site-To-Site VPN$
+! This is R1. Implement GRE over IPSec Site-To-Site VPN
+
+
+interface fastEthernet 0/0
+description Connection to R2
+ip address 64.100.0.2 255.255.255.252
+n shut
+exit 
+
+interface fastEthernet 0/1
+description Connection to D1
+ip address 10.10.0.1 255.255.255.252
+no shut
+exit 
+
+router ospf 123
+router-id 1.1.1.1
+auto-cost reference-bandwidth 1000
+network 10.10.0.0 0.0.0.3 area 0
+default-information originate
+exit
+ip route 0.0.0.0 0.0.0.0 64.100.0.1
+end
+
+
+
+
+
+
+R2------------------------------
+
+
+conf t
+no ip domain lookup
+line con 0
+logging sync
+exec-time 0 0
+exit
+---------------This is R2. Implement GRE over IPSec Site-To-Site VPN$
+! This is R2. Implement GRE over IPSec Site-To-Site VPN
+
+interface fastEthernet 0/0
+description Connection to R1
+ip address 64.100.0.1 255.255.255.252
+n shut
+exit 
+
+interface fastEthernet 0/1
+description Connection to R3
+ip address 64.100.1.1 255.255.255.252
+no shut
+exit 
+
+interface loopback 0
+description internet simulated address
+ip address 209.165.200.225 225.225.255.224
+
+interface loopback 0
+description internet simulated address
+ip address 209.165.200.225 225.225.255.224
+exit
+ip route 0.0.0.0 0.0.0.0 Loopback0
+ip route 10.10.0.0 255.255.252.0 64.100.0.2
+ip route 10.10.4.0 255.255.252.0 64.100.1.2
+ip route 10.10.16.0 255.255.248.0 64.100.1.2
+end
+
+
+
+R3---------------------------------------
+
+
+
+conf t
+no ip domain lookup
+line con 0
+logging sync
+exec-time 0 0
+exit
+---------------This is R3. Implement GRE over IPSec Site-To-Site VPN$
+! This is R3. Implement GRE over IPSec Site-To-Site VPN
+
+
+interface fastEthernet 0/0
+description Connection to R2
+ip address 64.100.1.2 255.255.255.252
+no shut
+exit 
+
+interface fastEthernet 0/1
+description Connection to R3
+ip address 10.10.4.1 255.255.255.252
+no shut
+exit 
+
+ip route 0.0.0.0 0.0.0.0 64.100.1.1
+router ospf 123
+router-id 3.3.3.1
+auto-cost reference-bandwidth 1000
+network 10.10.4.0 0.0.0.3 area 0
+default-information originate
+exit
+end
+
+
+
+R4 -  D1 ----------------------------
+
+
+
+conf t
+no ip domain lookup
+line con 0
+logging sync
+exec-time 0 0
+exit
+---------------This is D1. Implement GRE over IPSec Site-To-Site VPN$
+! This is D1. Implement GRE over IPSec Site-To-Site VPN
+
+
+interface fastEthernet 0/0
+description Connection to R1
+ip address 10.10.0.2 255.255.255.252
+no shut
+exit 
+
+interface fastEthernet 0/1
+description Connection to PC1
+ip address 10.10.1.1 255.255.255.0
+no shut
+exit 
+
+interface Loopback 2
+description Loopback to simulate an OSPF network
+ip address 10.10.2.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 3
+description Loopback to simulate an OSPF network
+ip address 10.10.3.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+router ospf 123
+router-id 1.1.1.2
+auto-cost reference-bandwidth 100
+auto-cost reference-bandwidth 1000
+network 10.10.0.0 0.0.3.255 area 0
+exit 
+end
+
+
+
+R5 - D2 ---------------------------------
+
+
+conf t 
+no ip domain lookup
+line con 0
+logging sync
+exec-time 0 0
+exit
+---------------This is D2. Implement GRE over IPSec Site-To-Site VPN$
+! This is D2. Implement GRE over IPSec Site-To-Site VPN
+
+
+interface fastEthernet 0/0
+description Connection to R3
+ip address 10.10.4.2 255.255.255.252
+no shut
+exit 
+
+interface fastEthernet 0/1
+description Connection to PC2
+ip address 10.10.5.1 255.255.255.0
+no shut
+exit 
+
+interface Loopback 16
+description Loopback to simulate an OSPF network
+ip address 10.10.16.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 17
+description Loopback to simulate an OSPF network
+ip address 10.10.17.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 18
+description Loopback to simulate an OSPF network
+ip address 10.10.18.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 19
+description Loopback to simulate an OSPF network
+ip address 10.10.19.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 20
+description Loopback to simulate an OSPF network
+ip address 10.10.20.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 21
+description Loopback to simulate an OSPF network
+ip address 10.10.21.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 22
+description Loopback to simulate an OSPF network
+ip address 10.10.22.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+interface Loopback 23
+description Loopback to simulate an OSPF network
+ip address 10.10.23.1 255.255.255.0
+ip ospf network point-to-point
+exit
+
+
+router ospf 123
+router-id 3.3.3.2
+auto-cost reference-bandwidth 1000
+network 10.10.4.0 0.0.1.255 area 0
+network 10.10.16.0 0.0.1.255 area 0
+
+exit 
+end
+
+
+
+PC1 -----------------------------------
+
+ip 10.10.1.10/24 10.10.1.1
+sh ip
+
+
+PC2
+
+ip 10.10.5.10/24 10.10.5.1
+sh ip
+
+
+PC1
+
+ping 10.10.16.1
+
+ping 209.165.200.225
+
+
+-----------------------------------------------------------------
+
+R1
+
+sh ip route ospf
+
+
+R3
+
+sh ip route ospf
+
+
+
+
+
+
+
+
+
+
+
+STEP 5
+
+
+R1
+
+
+conf t
+crypto isakmp policy 10
+encryption aes 256
+hash sha
+authentication pre-share
+group 1
+lifetime 36000
+exit
+
+crypto isakmp key cisco123 address 64.100.1.2
+
+
+crypto IPsec transform-set GRE-VPN esp-aes 256 esp-sha-hmac
+
+
+mode transport
+exit
+
+
+ip access-list extended GRE-VPN-ACL
+permit gre host 64.100.0.2 host 64.100.1.2
+exit
+
+
+crypto map GRE-CMAP 10 ipsec-isakmp
+match address GRE-VPN-ACL
+set transform-set GRE-VPN
+set peer 64.100.1.2
+exit
+
+
+interface fastEthernet 0/0
+crypto map GRE-CMAP
+exit
+
+interface Tunnel 1
+bandwidth 4000
+ip address 172.16.1.1 255.255.255.252
+ip mtu 1400
+tunnel source 64.100.0.2
+tunnel destination 64.100.1.2
+end
+
+
+
+
+R3 -----------------------------------------
+
+conf t
+crypto isakmp policy 10
+encryption aes 256
+hash sha
+authentication pre-share
+group 1
+lifetime 3600
+exit
+
+
+crypto isakmp key cisco123 address 64.100.0.2
+
+crypto IPsec transform-set GRE-VPN esp-aes 256 esp-sha-hmac
+mode transport 
+exit
+
+crypto IPsec profile FRE-profile
+
+set transform-set GRE-VPN
+
+
+
+interface Tunnel 1
+bandwidth 4000
+ip address 172.16.1.2 255.255.255.252
+ip mtu 1400
+tunnel source 64.100.1.2
+tunnel destination 64.100.0.2
+
+
+tunnel protection IPsec profile GRE-profile
+end
+
+
+
+
+R1--------------------------------------------------
+
+ping 10.10.16.1 source 10.10.0.1
+
+sh crypto IPsec sa | include encrypt  | decrypt
+
+
+D1-----------------------------------------------
+
+trace 10.10.16.1
+
+
+R1 -----------------------------
+
+
+conf t
+router ospf 123
+network 172.16.1.0 0.0.0.3 area 0
+
+
+R3----------------------------------------
+
+conf t
+router ospf 123
+network 172.16.1.0 0.0.0.3 area 0
+
+
+
+
+
+
+
+
+
+
+
+
+STEP 7 ---------------------------------------
+
+R1-----------------------
+
+sh interfaces tunnel 1
+
+
+R3-----------------------
+
+show inter tunnel  1 | include is up | Internet address | Enc | Tunnel proto$
+
+
+$tunnel 1 | include is up |Internet address | Enc | Tunnel protocol
+
+
+
+R1-----------------------
+
+sh crypto session
+
+
+R3-----------------------
+
+sh crypto session
+
+
+R1-----------------------
+
+sh ip ospf int bri
+
+
+R3-----------------------
+
+sh ip ospf int bri
+
+
+
+sh ip ospf neighbor
+
+
+
+
+R1-----------------------
+
+sh ip ospf neighbor
+
+sh ip route ospf
+
+
+
+R3-----------------------
+
+sh ip route ospf
+
+
+R1-----------------------
+
+sh ip route 172.16.0.0
+
+R3-----------------------
+
+sh ip route 172.16.0.0
+
+
+
+D1-----------------------
+
+trace 10.10.16.1
+
+
+R1-----------------------
+sh crypto IPsec sa | include encrypt | decrypt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
